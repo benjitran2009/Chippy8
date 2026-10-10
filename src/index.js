@@ -19,7 +19,7 @@ const font = {
   F: [0xf0, 0x80, 0xf0, 0x80, 0x80], // F
 };
 
-class chippyScreen {
+class Screen {
   /**
    * Create a screen class.
    * @param {HTMLCanvasElement} canvas - The HTMLCanvasElement to draw to
@@ -39,7 +39,110 @@ class chippyScreen {
   }
 }
 
+class Chip {
+  constructor() {}
+
+  /**
+   *
+   * @param {File} rom - file to load
+   */
+  async loadRom(rom) {
+    this.romData = await customRomInput.files[0].arrayBuffer();
+    this.instructionArray = new Uint16Array(this.romData);
+  }
+  executeInstruction(byteOne, byteTwo) {
+    const b1String = ("00" + byteOne.toString(16)).substr(-2);
+    const b2String = ("00" + byteTwo.toString(16)).substr(-2);
+    const nibble1 = b1String[0];
+    const nibble2 = b1String[1];
+    const nibble3 = b2String[0];
+    const nibble4 = b2String[1];
+    const mem = nibble1 + nibble2 + nibble3;
+    console.log(`byteOne: ${b1String} | byteTwo: ${b2String}
+    nibble1: ${nibble1}
+    nibble2: ${nibble2}
+    nibble3: ${nibble3}
+    nibble4: ${nibble4}
+    mem: ${mem} `);
+
+    switch (nibble1) {
+      case "0":
+        break;
+      case "1":
+        break;
+      case "6":
+        break;
+      case "7":
+        break;
+      case "A":
+        break;
+      case "D":
+        break;
+      default:
+        console.warn(
+          `Unimplemented instruction: ${b1String + b2String}. This instruction will be skipped!`,
+        );
+        break;
+    }
+
+    //dcode
+    /*
+    const nibble1;
+    const nibble2;
+    const nibble3;
+    const nibble4;
+    const byteOne;
+    const byteTwo;*/
+  }
+  runProgram() {
+    if (!this.romData || !this.instructionArray)
+      throw new Error("No rom loaded!");
+    this.programCounter = 0;
+    const programLoop = setInterval(() => {
+      if ((this.programCounter < this.instructionArray.length)) {
+        this.executeInstruction(
+          this.instructionArray[this.programCounter] >> 8,
+          this.instructionArray[this.programCounter + 1] >> 8,
+        ); // a|b
+        this.programCounter+=2;
+      } else {
+        clearInterval(programLoop);
+        alert("Program finished");
+        return;
+      }
+    }, 1000 / 700);
+    /*
+    while ((this.programCounter += 2 < this.instructionArray.length)) {
+      this.executeInstruction(
+        this.instructionArray[this.programCounter] >> 8,
+        this.instructionArray[this.programCounter + 1] >> 8,
+      ); // a|b
+    }*/
+    //this.programCounter = 0;
+    //this.executeInstruction(this.instructionArray[this.programCounter] >> 8, this.instructionArray[this.programCounter + 1] >> 8); // a|b
+    //this.programCounter+=2;
+
+    //const instruction
+    //setInterval()
+  }
+}
+
 /**@type {chippyScreen} */
 const chippyScreen = new Screen(document.querySelector("#screen"));
 
+/**@type {Chip} */
+const chip = new Chip();
+
+/**@type {HTMLButtonElement} */
+const loadCustomRom = document.querySelector("#loadrom");
+/**@type {HTMLInputElement} */
+const customRomInput = document.querySelector("#rom");
+loadCustomRom.addEventListener("click", async () => {
+  await chip.loadRom(customRomInput.files[0]);
+  chip.runProgram();
+  //const romData = await customRomInput.files[0].arrayBuffer();
+  //const instructionArray = new Uint8Array(romData);
+
+  //console.log(romData);
+});
 // init screen
