@@ -19,5 +19,27 @@ const font = {
   F: [0xf0, 0x80, 0xf0, 0x80, 0x80], // F
 };
 
-// init screen
+class chippyScreen {
+  /**
+   * Create a screen class.
+   * @param {HTMLCanvasElement} canvas - The HTMLCanvasElement to draw to
+   **/
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.context = canvas.getContext("2d");
+    return this;
+  }
+  on(x, y) {
+    this.context.fillStyle = "black";
+    this.context.fillRect(x * 10, y * 10, 10, 10);
+  }
+  off(x, y) {
+    this.context.fillStyle = "white";
+    this.context.fillRect(x * 10, y * 10, 10, 10);
+  }
+}
 
+/**@type {chippyScreen} */
+const chippyScreen = new Screen(document.querySelector("#screen"));
+
+// init screen
