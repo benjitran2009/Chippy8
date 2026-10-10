@@ -82,7 +82,7 @@ class Chip {
    * @param {File} rom - file to load
    */
   async loadRomFile(rom) {
-    this.romData = rom.arrayBuffer()//await customRomInput.files[0].arrayBuffer();
+    this.romData = await rom.arrayBuffer()//await customRomInput.files[0].arrayBuffer();
     this.instructionArray = new Uint8Array(this.romData);
     this.instructionArray.forEach((val, indx) => {
       memory[indx+0x200] = val;
