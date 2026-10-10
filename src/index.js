@@ -1,6 +1,13 @@
 let memory = new Uint16Array(4096);
 let register = {};
+let stack = [];
 let indexRegister = 0;
+let currentKey = "";
+let delayTimer = 0;
+let soundTimer = 0;
+document.addEventListener("keypress", (e) => {
+  currentKey = e.key.toLowerCase();
+});
 
 const font = {
   0: [0xf0, 0x90, 0x90, 0x90, 0xf0], // 0
@@ -30,16 +37,15 @@ class Screen {
     this.canvas = canvas;
     this.context = canvas.getContext("2d");
     this.context.fillStyle = "black";
-    this.canvas.width = 640 ;
+    this.canvas.width = 640;
     this.canvas.height = 320;
-    this.context.fillRect(0,0,640,320);
+    this.context.fillRect(0, 0, 640, 320);
     this.data = [];
     for (let indx = 0; indx < 32; indx++) {
       this.data[indx] = [];
       for (let indx2 = 0; indx2 < 64; indx2++) {
         this.data[indx][indx2] = false;
       }
-      
     }
     console.log(this.data);
     return this;
@@ -54,9 +60,9 @@ class Screen {
     this.context.fillRect(x * 10, y * 10, 10, 10);
     this.data[y][x] = false;
   }
-  get(x,y) {
+  get(x, y) {
     //console.log(x,y);
-    return this.data[y][x];
+    return this.data?.[y]?.[x]; //|| false;
   }
 }
 
@@ -73,7 +79,7 @@ class Chip {
       value.forEach((v) => {
         memory[indx] = v;
         indx++;
-      })
+      });
     }
   }
 
@@ -82,31 +88,33 @@ class Chip {
    * @param {File} rom - file to load
    */
   async loadRomFile(rom) {
-    this.romData = await rom.arrayBuffer()//await customRomInput.files[0].arrayBuffer();
+    this.romData = await rom.arrayBuffer(); //await customRomInput.files[0].arrayBuffer();
     this.instructionArray = new Uint8Array(this.romData);
     this.instructionArray.forEach((val, indx) => {
-      memory[indx+0x200] = val;
+      memory[indx + 0x200] = val;
     });
   }
   async loadRomBytes(bytes) {
-    this.romData = bytes
-    this.instructionArray = bytes
+    this.romData = bytes;
+    this.instructionArray = bytes;
     this.instructionArray.forEach((val, indx) => {
-      memory[indx+0x200] = val;
+      memory[indx + 0x200] = val;
     });
   }
 
   hexStringToNumber(hex) {
-    return Number(`0x${hex}`)
+    return Number(`0x${hex}`);
   }
   executeInstruction(byteOne, byteTwo) {
-    const b1String = byteOne.toString(16).padStart(2,"0").toLowerCase();
-    const b2String = byteTwo.toString(16).padStart(2,"0").toLowerCase();
+    const b1String = byteOne.toString(16).padStart(2, "0").toLowerCase();
+    const b2String = byteTwo.toString(16).padStart(2, "0").toLowerCase();
     const nibble1 = b1String[0];
     const nibble2 = b1String[1];
     const nibble3 = b2String[0];
     const nibble4 = b2String[1];
     const nnn = nibble2 + nibble3 + nibble4;
+    byteOne = b1String;
+    byteTwo = b2String;
     console.log(`byteOne: ${b1String} | byteTwo: ${b2String}
     nibble1: ${nibble1}
     nibble2: ${nibble2}
@@ -118,43 +126,154 @@ class Chip {
       case "0":
         if (nnn == "0e0") {
           // this is just clear screen.
-          console.log("CLEAR")
+          console.log("CLEAR");
           const x = new Array(64);
           const y = new Array(32);
           y.forEach((_, indxY) => {
             x.forEach((_, indxX) => {
-              chippyScreen.off(indxX,indxY);
-            })
-          })
+              chippyScreen.off(indxX, indxY);
+            });
+          });
+        } else if (nibble2 == "0") {
+          this.programCounter = stack.pop();
         }
         break;
       case "1":
         // JUMP instruction - this should jump to NNN
         console.log("JUMP");
         this.programCounter = this.hexStringToNumber(nnn);
-
+        break;
+      case "2":
+        console.log("SUBROUTINE");
+        stack.push(this.programCounter);
+        this.programCounter = this.hexStringToNumber(nnn);
+        break;
+      case "3":
+        if (
+          register[this.hexStringToNumber(nibble2)] ===
+          this.hexStringToNumber(byteTwo)
+        ) {
+          this.programCounter += 2;
+        }
+        break;
+      case "3":
+        if (
+          register[this.hexStringToNumber(nibble2)] !==
+          this.hexStringToNumber(byteTwo)
+        ) {
+          this.programCounter += 2;
+        }
+        break;
+      case "5":
+        if (
+          register[this.hexStringToNumber(nibble2)] ===
+          register[this.hexStringToNumber(nibble3)]
+        ) {
+          this.programCounter += 2;
+        }
         break;
       case "6":
         // SET set VX to NN (6XNN)
         console.log("SET");
-        register[this.hexStringToNumber(nibble2)] = this.hexStringToNumber(byteTwo);
+        register[this.hexStringToNumber(nibble2)] =
+          this.hexStringToNumber(byteTwo);
         break;
       case "7":
         console.log("ADD");
-        register[this.hexStringToNumber(nibble2)]+=this.hexStringToNumber(byteTwo);
+        register[this.hexStringToNumber(nibble2)] +=
+          this.hexStringToNumber(byteTwo);
+        break;
+      case "8":
+        switch (nibble4) {
+          case "0":
+            register[this.hexStringToNumber(nibble2)] =
+              register[this.hexStringToNumber(nibble3)];
+            break;
+          case "1":
+            register[this.hexStringToNumber(nibble2)] =
+              register[this.hexStringToNumber(nibble2)] |
+              register[this.hexStringToNumber(nibble3)];
+            break;
+          case "2":
+            register[this.hexStringToNumber(nibble2)] =
+              register[this.hexStringToNumber(nibble2)] &
+              register[this.hexStringToNumber(nibble3)];
+            break;
+          case "3":
+            register[this.hexStringToNumber(nibble2)] =
+              register[this.hexStringToNumber(nibble2)] ^
+              register[this.hexStringToNumber(nibble3)];
+            break;
+          case "4":
+            var result =
+              register[this.hexStringToNumber(nibble2)] &
+              register[this.hexStringToNumber(nibble3)];
+            if (result > 255) {
+              register[0xf] = 1;
+              result = result % 256;
+            } else {
+              register[0xf] = 0;
+            }
+            register[this.hexStringToNumber(nibble2)] = 0;
+            break;
+          case "5":
+            register[this.hexStringToNumber(nibble2)] =
+              register[this.hexStringToNumber(nibble2)] -
+              register[this.hexStringToNumber(nibble3)];
+            break;
+          case "6":
+            // this one might be wrong
+            register[this.hexStringToNumber(nibble2)] =
+              register[this.hexStringToNumber(nibble3)]; //OPT
+            var shiftedBit = register[this.hexStringToNumber(nibble2)] & 1;
+            register[this.hexStringToNumber(nibble2)] =
+              register[this.hexStringToNumber(nibble2)] >> 1;
+            register[0xf] = shiftedBit ? 1 : 0;
+            break;
+          case "7":
+            register[this.hexStringToNumber(nibble2)] =
+              register[this.hexStringToNumber(nibble3)] -
+              register[this.hexStringToNumber(nibble2)];
+            break;
+          case "E":
+            register[this.hexStringToNumber(nibble2)] =
+              register[this.hexStringToNumber(nibble3)]; //OPT
+            var shiftedBit = register[this.hexStringToNumber(nibble2)] & 1;
+            register[this.hexStringToNumber(nibble2)] =
+              register[this.hexStringToNumber(nibble2)] << 1;
+            register[0xf] = shiftedBit ? 1 : 0;
+            break;
+        }
+        break;
+      case "9":
+        if (
+          register[this.hexStringToNumber(nibble2)] !==
+          register[this.hexStringToNumber(nibble3)]
+        ) {
+          this.programCounter += 2;
+        }
         break;
       case "a":
         indexRegister = this.hexStringToNumber(nnn);
+        break;
+      case "b":
+        this.programCounter = this.hexStringToNumber(nnn) + register[0x0];
+        break;
+      case "c":
+        register[this.hexStringToNumber(nibble2)] =
+          Math.random & this.hexStringToNumber(byteTwo);
         break;
       case "d":
         console.log("DRAW");
         const pixelsTall = this.hexStringToNumber(nibble4);
         let x = register[this.hexStringToNumber(nibble2)] % 64;
         let y = register[this.hexStringToNumber(nibble3)] % 32;
-        console.log(`Tall: ${pixelsTall} x: ${x} | y: ${y} | i: ${indexRegister}`)
-        register[0xF] = 0;
+        console.log(
+          `Tall: ${pixelsTall} x: ${x} | y: ${y} | i: ${indexRegister}`,
+        );
+        register[0xf] = 0;
         for (let i = 0; i < pixelsTall; i++) {
-          const nByte = memory[indexRegister + i].toString(2).padStart(8,"0");
+          const nByte = memory[indexRegister + i].toString(2).padStart(8, "0");
           //x=x%64;
           //y=y%32;
           x = register[this.hexStringToNumber(nibble2)] % 64;
@@ -163,24 +282,52 @@ class Chip {
             //console.log(val)
             val = parseInt(val);
 
-            if (val && chippyScreen.get(x,y)) {
-              console.log("OFF")
-              chippyScreen.off(x,y);
-              register[0xF] = true;
-            } else if (val && !chippyScreen.get(x,y)) {
-              console.log("ON")
-              chippyScreen.on(x,y);
+            if (val && chippyScreen.get(x, y)) {
+              console.log("OFF");
+              chippyScreen.off(x, y);
+              register[0xf] = true;
+            } else if (val && !chippyScreen.get(x, y)) {
+              console.log("ON");
+              chippyScreen.on(x, y);
             }
-            if (x==64) return;//alert("stop");
+            if (x == 64) return; //alert("stop");
             x++;
-          })
-          if (y==32) return;
+          });
+          if (y == 32) return;
           y++;
           //console.log("nByte:" + nByte.toString(2).padEnd(8,"0"));
           //nBy
           //console.log("nByte: "+nByte);
         }
 
+        break;
+      case "e":
+        switch (byteTwo) {
+          case "9e":
+            if (currentKey === register[this.hexStringToNumber(nibble2)]) {
+              this.programCounter += 2;
+            }
+            break;
+          case "a1":
+            if (currentKey !== register[this.hexStringToNumber(nibble2)]) {
+              this.programCounter += 2;
+            }
+            break;
+        }
+
+        break;
+      case "f":
+        switch (byteTwo) {
+          case "07":
+            register[this.hexStringToNumber(nibble2)] = delayTimer;
+            break;
+          case "15":
+            delayTimer = register[this.hexStringToNumber(nibble2)];
+            break;
+          case "18":
+            soundTimer = register[this.hexStringToNumber(nibble2)];
+            break;
+        }
         break;
       default:
         console.warn(
@@ -194,18 +341,24 @@ class Chip {
       throw new Error("No rom loaded!");
     this.programCounter = 0;
     const programLoop = setInterval(() => {
-      if ((this.programCounter < this.instructionArray.length)) {
+      if (this.programCounter < this.instructionArray.length) {
         this.executeInstruction(
           this.instructionArray[this.programCounter],
           this.instructionArray[this.programCounter + 1],
         ); // a|b
-        this.programCounter+=2;
+        this.programCounter += 2;
       } else {
         clearInterval(programLoop);
         alert("Program finished");
         return;
       }
     }, 1000 / 700);
+    const soundLoop = setInterval(() => {
+      soundTimer = soundTimer - 1 <= -1 ? 0 : soundTimer - 1;
+    }, 1000 / 60);
+    const delayLoop = setInterval(() => {
+      delayTimer = delayTimer - 1 <= -1 ? 0 : soundTimer - 1;
+    }, 1000 / 60);
     /*
     while ((this.programCounter += 2 < this.instructionArray.length)) {
       this.executeInstruction(
@@ -243,9 +396,10 @@ loadCustomRom.addEventListener("click", async () => {
   //console.log(romData);
 });
 
-const downloadAndReturnData = async (url) => fetch(url).then(async (x) => {
-  return x && x.ok ? await x.bytes() : undefined;
-});
+const downloadAndReturnData = async (url) =>
+  fetch(url).then(async (x) => {
+    return x && x.ok ? await x.bytes() : undefined;
+  });
 
 document.querySelectorAll("button[loadrom]").forEach(async (element) => {
   const link = element.getAttribute("loadrom");
@@ -254,5 +408,5 @@ document.querySelectorAll("button[loadrom]").forEach(async (element) => {
     await chip.loadRomBytes(data);
     chip.runProgram();
   });
-})
+});
 // init screen
