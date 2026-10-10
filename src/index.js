@@ -1,4 +1,5 @@
-const memory = new Uint16Array(4096);
+let memory = new Uint16Array(4096);
+let register;
 
 const font = {
   0: [0xf0, 0x90, 0x90, 0x90, 0xf0], // 0
@@ -27,14 +28,16 @@ class Screen {
   constructor(canvas) {
     this.canvas = canvas;
     this.context = canvas.getContext("2d");
+    this.context.fillStyle = "black";
+    this.context.fillRect(0,0,640,320);
     return this;
   }
   on(x, y) {
-    this.context.fillStyle = "black";
+    this.context.fillStyle = "white";
     this.context.fillRect(x * 10, y * 10, 10, 10);
   }
   off(x, y) {
-    this.context.fillStyle = "white";
+    this.context.fillStyle = "black";
     this.context.fillRect(x * 10, y * 10, 10, 10);
   }
 }
@@ -43,19 +46,37 @@ class Chip {
   constructor() {}
 
   /**
+   * @param {{[name: string|number]: number[]}} font - font to load
+   */
+  async loadFont(font) {
+    let indx = 0;
+    for (let [_, value] of Object.entries(font)) {
+      //console.log(value)
+      value.forEach((v) => {
+        memory[indx] = v;
+        indx++;
+      })
+    }
+  }
+
+  /**
    *
    * @param {File} rom - file to load
    */
   async loadRom(rom) {
     this.romData = await customRomInput.files[0].arrayBuffer();
     this.instructionArray = new Uint8Array(this.romData);
+    this.instructionArray.forEach((val, indx) => {
+      memory[indx+0x200] = val;
+    });
   }
+
   hexStringToNumber(hex) {
     return Number(`$0x{hex}`)
   }
   executeInstruction(byteOne, byteTwo) {
-    const b1String = byteOne.toString(16).padStart(2,"0");
-    const b2String = byteTwo.toString(16).padStart(2,"0");
+    const b1String = byteOne.toString(16).padStart(2,"0").toLowerCase();
+    const b2String = byteTwo.toString(16).padStart(2,"0").toLowerCase();
     const nibble1 = b1String[0];
     const nibble2 = b1String[1];
     const nibble3 = b2String[0];
@@ -70,17 +91,33 @@ class Chip {
 
     switch (nibble1) {
       case "0":
+        if (nnn == "0e0") {
+          // this is just clear screen.
+          console.log("CLEAR")
+          const x = new Array(64);
+          const y = new Array(32);
+          y.forEach((_, indxY) => {
+            x.forEach((_, indxX) => {
+              chippyScreen.off(indxX,indxY);
+            })
+          })
+        }
         break;
       case "1":
         // JUMP instruction - this should jump to NNN
         console.log("JUMP");
         this.programCounter = this.hexStringToNumber(nnn);
+
         break;
       case "6":
+        // SET set VX to NN (6XNN)
+        register[this.hexStringToNumber(nibble2)] = this.hexStringToNumber(byteTwo);
         break;
       case "7":
+        register[this.hexStringToNumber(nibble2)]+=this.hexStringToNumber(byteTwo);
         break;
       case "A":
+        register
         break;
       case "D":
         break;
@@ -90,15 +127,6 @@ class Chip {
         );
         break;
     }
-
-    //dcode
-    /*
-    const nibble1;
-    const nibble2;
-    const nibble3;
-    const nibble4;
-    const byteOne;
-    const byteTwo;*/
   }
   runProgram() {
     if (!this.romData || !this.instructionArray)
@@ -138,6 +166,8 @@ const chippyScreen = new Screen(document.querySelector("#screen"));
 
 /**@type {Chip} */
 const chip = new Chip();
+
+chip.loadFont(font);
 
 /**@type {HTMLButtonElement} */
 const loadCustomRom = document.querySelector("#loadrom");
