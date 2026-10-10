@@ -28,6 +28,11 @@ catched on later when I was implementing the other instructions like not includi
 that was broken but looked fine to me. I also used the wrong type of array which skipped every other byte. Other than that, the instructions
 being implemented were straightforward with the guide that was provided in the guides tab for emulator and was pretty challenging at some parts
 which I did like but overall would write another emulator after this one is finished.
+
+Part 2 (next day)
+Implementing most of the new instructions were straightforward at first, but when I started running the test rom and looking at the code for it I saw that there were
+many dumb mistakes I accidentally made at the start or during the instructions which all added up but I believe I have fixed most of the errors.
+
 Currently there is only 6 instructions implemented out of 35(?) but the rest should be relatively easy.
 The goal is to ship with atleast 50% of instructions implemented or enough to run all the tests on CHIP8 Test Suite.
 

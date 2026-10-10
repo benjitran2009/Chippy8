@@ -1,6 +1,6 @@
 let memory = new Uint16Array(4096);
 let register = new Uint8Array(16).fill(false);
-let stack = [];//new Array(16).fill(false);
+let stack = []; //new Array(16).fill(false);
 let indexRegister = 0;
 let currentKey = "";
 let delayTimer = 0;
@@ -9,9 +9,8 @@ let keyHeld = false;
 document.addEventListener("keypress", (e) => {
   currentKey = e.key.toLowerCase();
 });
-document.addEventListener("keyup", () => keyHeld = false);
-document.addEventListener("keydown", () => keyHeld = true);
-
+document.addEventListener("keyup", () => (keyHeld = false));
+document.addEventListener("keydown", () => (keyHeld = true));
 
 const font = {
   0: [0xf0, 0x90, 0x90, 0x90, 0xf0], // 0
@@ -95,7 +94,7 @@ class Chip {
     this.romData = await rom.arrayBuffer(); //await customRomInput.files[0].arrayBuffer();
     this.instructionArray = new Uint8Array(this.romData);
     this.instructionArray.forEach((val, indx) => {
-      console.log(`WRITE ${val} TO ${indx+0x200}`);
+      console.log(`WRITE ${val} TO ${indx + 0x200}`);
       memory[indx + 0x200] = val;
     });
   }
@@ -120,7 +119,7 @@ class Chip {
     const nnn = nibble2 + nibble3 + nibble4;
     byteOne = b1String;
     byteTwo = b2String;
-    console.log(`programCounter: ${this.programCounter} | byteOne: ${b1String} | byteTwo: ${b2String}
+    console.log(`raw inst: ${byteOne + byteTwo} | programCounter: ${this.programCounter} | byteOne: ${b1String} | byteTwo: ${b2String}
     nibble1: ${nibble1}
     nibble2: ${nibble2}
     nibble3: ${nibble3}
@@ -136,9 +135,8 @@ class Chip {
           console.log("CLEAR");
           for (let y = 0; y < 32; y++) {
             for (let x = 0; x < 64; x++) {
-              chippyScreen.off(x,y);
+              chippyScreen.off(x, y);
             }
-            
           }
           //const x = new Array(64);
           //const y = new Array(32);
@@ -149,20 +147,26 @@ class Chip {
           //});
         } else if (nnn == "0ee") {
           //alert()
-          alert(JSON.stringify(stack))
-          this.programCounter = stack.pop();
+          //alert(JSON.stringify(stack))
+          //alert(`Returning subroutine | POP: ${stack[stack.length - 1]}`);
+          //alert(stack.pop())
+          //alert(register[0]);
+          this.programCounter = stack.pop(); // RETURN
         }
         break;
       case "1":
         // JUMP instruction - this should jump to NNN
         console.log("JUMP");
-        this.programCounter = this.hexStringToNumber(nnn)-2;
+        this.programCounter = this.hexStringToNumber(nnn) - 2;
         break;
       case "2":
         console.log("SUBROUTINE");
+        //alert(
+        //  `inst: ${byteOne+byteTwo} | Created subroutine | PUSHING ${this.programCounter} | JUMPING TO ${this.hexStringToNumber(nnn)}`,
+        //);
         //alert(JSON.stringify(this.programCounter));
-        stack.push(this.programCounter);
-        this.programCounter = this.hexStringToNumber(nnn);
+        stack.push(this.programCounter); // SAVE FOR RETURN
+        this.programCounter = this.hexStringToNumber(nnn) - 2; // JUMP
         break;
       case "3":
         if (
@@ -172,7 +176,7 @@ class Chip {
           this.programCounter += 2;
         }
         break;
-      case "3":
+      case "4":
         if (
           register[this.hexStringToNumber(nibble2)] !==
           this.hexStringToNumber(byteTwo)
@@ -196,8 +200,10 @@ class Chip {
         break;
       case "7":
         console.log("ADD");
-        register[this.hexStringToNumber(nibble2)] +=
-          this.hexStringToNumber(byteTwo);
+        register[this.hexStringToNumber(nibble2)] =
+          (register[this.hexStringToNumber(nibble2)] +
+            this.hexStringToNumber(byteTwo)) %
+          256;
         break;
       case "8":
         switch (nibble4) {
@@ -222,7 +228,7 @@ class Chip {
             break;
           case "4":
             var result =
-              register[this.hexStringToNumber(nibble2)] &
+              register[this.hexStringToNumber(nibble2)] +
               register[this.hexStringToNumber(nibble3)];
             if (result > 255) {
               register[0xf] = 1;
@@ -230,7 +236,7 @@ class Chip {
             } else {
               register[0xf] = 0;
             }
-            register[this.hexStringToNumber(nibble2)] = 0;
+            register[this.hexStringToNumber(nibble2)] = result;
             break;
           case "5":
             register[this.hexStringToNumber(nibble2)] =
@@ -243,7 +249,7 @@ class Chip {
               register[this.hexStringToNumber(nibble3)]; //OPT
             var shiftedBit = register[this.hexStringToNumber(nibble2)] & 1;
             register[this.hexStringToNumber(nibble2)] =
-              register[this.hexStringToNumber(nibble2)] >> 1;
+              (register[this.hexStringToNumber(nibble2)] >> 1) % 256;
             register[0xf] = shiftedBit ? 1 : 0;
             break;
           case "7":
@@ -251,12 +257,13 @@ class Chip {
               register[this.hexStringToNumber(nibble3)] -
               register[this.hexStringToNumber(nibble2)];
             break;
-          case "E":
+          case "e":
+            //alert(byteOne+byteTwo)
             register[this.hexStringToNumber(nibble2)] =
               register[this.hexStringToNumber(nibble3)]; //OPT
             var shiftedBit = register[this.hexStringToNumber(nibble2)] & 1;
             register[this.hexStringToNumber(nibble2)] =
-              register[this.hexStringToNumber(nibble2)] << 1;
+              (register[this.hexStringToNumber(nibble2)] << 1) % 256;
             register[0xf] = shiftedBit ? 1 : 0;
             break;
         }
@@ -344,34 +351,45 @@ class Chip {
             soundTimer = register[this.hexStringToNumber(nibble2)];
             break;
           case "1e":
-            indexRegister+=register[this.hexStringToNumber(nibble2)];
-            register[0xF] = indexRegister > 1000 ? 1 : register[0xf]
-          break;
+            indexRegister += register[this.hexStringToNumber(nibble2)];
+            register[0xf] = indexRegister > 1000 ? 1 : register[0xf];
+            break;
           case "0a":
             if (!keyHeld) {
-              this.programCounter-=2;
+              this.programCounter -= 2;
             } else {
-              register[this.hexStringToNumber(nibble2)] = currentKey.charCodeAt(0);
+              register[this.hexStringToNumber(nibble2)] =
+                currentKey.charCodeAt(0);
             }
             break;
           case "29":
-            indexRegister = 0 + (register[this.hexStringToNumber(nibble2)] * 5);
+            indexRegister = 0 + register[this.hexStringToNumber(nibble2)] * 5;
             break;
           case "33":
-              let arr = (register[this.hexStringToNumber(nibble2)]).toString().padStart(3,0).split("");
-              arr.forEach((item, indx) => {
-                //alert(`Wrote ${item} to ${indexRegister + indx}`)
-                register[indx] = item;
-              })
+            let arr = register[this.hexStringToNumber(nibble2)]
+              .toString()
+              .padStart(3, 0)
+              .split("");
+            arr.forEach((item, indx) => {
+              //alert(`Wrote ${item} to ${indexRegister + indx}`)
+              memory[indexRegister + indx] = item;
+            });
             break;
           case "55":
             for (let i = 0; i <= this.hexStringToNumber(nibble2); i++) {
               let variableRegisterToStore = register[i];
-              register[indexRegister+i] = variableRegisterToStore;
+              memory[indexRegister + i] = variableRegisterToStore;
               //indexRegister++;
             }
             break;
           case "65":
+            //let valueStoredAtMemoryAddress = memory[this.hexStringToNumber(nibble2)];
+            for (let i = 0; i <= this.hexStringToNumber(nibble2); i++) {
+              register[i] = memory[indexRegister + i];
+              //let variableRegisterToStore = register[i];
+              //memory[indexRegister+i] = variableRegisterToStore;
+              //indexRegister++;
+            }
             break;
         }
         break;
@@ -388,12 +406,12 @@ class Chip {
     this.programCounter = 0x200;
     const programLoop = setInterval(() => {
       //if (this.programCounter < this.instructionArray.length) {
-        //console.log(this.instructionArray[this.programCounter] + this.instructionArray[this.programCounter + 1])
-        this.executeInstruction(
-          memory[this.programCounter],
-          memory[this.programCounter + 1],
-        ); // a|b
-        this.programCounter += 2;
+      //console.log(this.instructionArray[this.programCounter] + this.instructionArray[this.programCounter + 1])
+      this.executeInstruction(
+        memory[this.programCounter],
+        memory[this.programCounter + 1],
+      ); // a|b
+      this.programCounter += 2;
       //} else {
       //  clearInterval(programLoop);
       //  alert("Program finished");
