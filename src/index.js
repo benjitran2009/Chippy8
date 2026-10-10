@@ -19,4 +19,5 @@ const font = {
   F: [0xf0, 0x80, 0xf0, 0x80, 0x80], // F
 };
 
+// init screen
 
