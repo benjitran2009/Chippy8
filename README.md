@@ -31,10 +31,21 @@ which I did like but overall would write another emulator after this one is fini
 Currently there is only 6 instructions implemented out of 35(?) but the rest should be relatively easy.
 The goal is to ship with atleast 50% of instructions implemented or enough to run all the tests on CHIP8 Test Suite.
 
+## Goal
+
+- Good looking ui (for the example & iframe)
+- Easy modularity to be used in other projects
+- 100% accuracy
+- Adjustable accuracy
+- Adjustable clock speed
+- IFrame-type embedding to run a file ([https://example.com/embed?file=FILE](https://example.com/embed?file=FILE)) or a api like `const chippy = new Chippy8(canvas, options);`
+- Much better code comments hopefully
+
 ## Statistics
 
 6/35 instructions implemented
-Non-cycle accurate
+
+Non-cycle accurate (700/s (adjustable?))
 
 > Instructions implemented:
 > 🟥 - Broken
