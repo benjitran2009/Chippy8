@@ -48,14 +48,14 @@ class Chip {
    */
   async loadRom(rom) {
     this.romData = await customRomInput.files[0].arrayBuffer();
-    this.instructionArray = new Uint16Array(this.romData);
+    this.instructionArray = new Uint8Array(this.romData);
   }
   hexStringToNumber(hex) {
     return Number(`$0x{hex}`)
   }
   executeInstruction(byteOne, byteTwo) {
-    const b1String = ("00" + byteOne.toString(16)).substr(-2);
-    const b2String = ("00" + byteTwo.toString(16)).substr(-2);
+    const b1String = byteOne.toString(16).padStart(2,"0");
+    const b2String = byteTwo.toString(16).padStart(2,"0");
     const nibble1 = b1String[0];
     const nibble2 = b1String[1];
     const nibble3 = b2String[0];
@@ -107,8 +107,8 @@ class Chip {
     const programLoop = setInterval(() => {
       if ((this.programCounter < this.instructionArray.length)) {
         this.executeInstruction(
-          this.instructionArray[this.programCounter] >> 8,
-          this.instructionArray[this.programCounter + 1] >> 8,
+          this.instructionArray[this.programCounter],
+          this.instructionArray[this.programCounter + 1],
         ); // a|b
         this.programCounter+=2;
       } else {
