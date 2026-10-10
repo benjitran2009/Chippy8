@@ -1,5 +1,6 @@
 let memory = new Uint16Array(4096);
-let register;
+let register = {};
+let indexRegister = 0;
 
 const font = {
   0: [0xf0, 0x90, 0x90, 0x90, 0xf0], // 0
@@ -29,16 +30,33 @@ class Screen {
     this.canvas = canvas;
     this.context = canvas.getContext("2d");
     this.context.fillStyle = "black";
+    this.canvas.width = 640 ;
+    this.canvas.height = 320;
     this.context.fillRect(0,0,640,320);
+    this.data = [];
+    for (let indx = 0; indx < 32; indx++) {
+      this.data[indx] = [];
+      for (let indx2 = 0; indx2 < 64; indx2++) {
+        this.data[indx][indx2] = false;
+      }
+      
+    }
+    console.log(this.data);
     return this;
   }
   on(x, y) {
     this.context.fillStyle = "white";
     this.context.fillRect(x * 10, y * 10, 10, 10);
+    this.data[y][x] = true;
   }
   off(x, y) {
     this.context.fillStyle = "black";
     this.context.fillRect(x * 10, y * 10, 10, 10);
+    this.data[y][x] = false;
+  }
+  get(x,y) {
+    //console.log(x,y);
+    return this.data[y][x];
   }
 }
 
@@ -63,16 +81,23 @@ class Chip {
    *
    * @param {File} rom - file to load
    */
-  async loadRom(rom) {
-    this.romData = await customRomInput.files[0].arrayBuffer();
+  async loadRomFile(rom) {
+    this.romData = rom.arrayBuffer()//await customRomInput.files[0].arrayBuffer();
     this.instructionArray = new Uint8Array(this.romData);
+    this.instructionArray.forEach((val, indx) => {
+      memory[indx+0x200] = val;
+    });
+  }
+  async loadRomBytes(bytes) {
+    this.romData = bytes
+    this.instructionArray = bytes
     this.instructionArray.forEach((val, indx) => {
       memory[indx+0x200] = val;
     });
   }
 
   hexStringToNumber(hex) {
-    return Number(`$0x{hex}`)
+    return Number(`0x${hex}`)
   }
   executeInstruction(byteOne, byteTwo) {
     const b1String = byteOne.toString(16).padStart(2,"0").toLowerCase();
@@ -111,15 +136,51 @@ class Chip {
         break;
       case "6":
         // SET set VX to NN (6XNN)
+        console.log("SET");
         register[this.hexStringToNumber(nibble2)] = this.hexStringToNumber(byteTwo);
         break;
       case "7":
+        console.log("ADD");
         register[this.hexStringToNumber(nibble2)]+=this.hexStringToNumber(byteTwo);
         break;
-      case "A":
-        register
+      case "a":
+        indexRegister = this.hexStringToNumber(nnn);
         break;
-      case "D":
+      case "d":
+        console.log("DRAW");
+        const pixelsTall = this.hexStringToNumber(nibble4);
+        let x = register[this.hexStringToNumber(nibble2)] % 64;
+        let y = register[this.hexStringToNumber(nibble3)] % 32;
+        console.log(`Tall: ${pixelsTall} x: ${x} | y: ${y} | i: ${indexRegister}`)
+        register[0xF] = 0;
+        for (let i = 0; i < pixelsTall; i++) {
+          const nByte = memory[indexRegister + i].toString(2).padStart(8,"0");
+          //x=x%64;
+          //y=y%32;
+          x = register[this.hexStringToNumber(nibble2)] % 64;
+          //y = register[this.hexStringToNumber(nibble3)] % 32;
+          nByte.split("").forEach((val) => {
+            //console.log(val)
+            val = parseInt(val);
+
+            if (val && chippyScreen.get(x,y)) {
+              console.log("OFF")
+              chippyScreen.off(x,y);
+              register[0xF] = true;
+            } else if (val && !chippyScreen.get(x,y)) {
+              console.log("ON")
+              chippyScreen.on(x,y);
+            }
+            if (x==64) return;//alert("stop");
+            x++;
+          })
+          if (y==32) return;
+          y++;
+          //console.log("nByte:" + nByte.toString(2).padEnd(8,"0"));
+          //nBy
+          //console.log("nByte: "+nByte);
+        }
+
         break;
       default:
         console.warn(
@@ -174,11 +235,24 @@ const loadCustomRom = document.querySelector("#loadrom");
 /**@type {HTMLInputElement} */
 const customRomInput = document.querySelector("#rom");
 loadCustomRom.addEventListener("click", async () => {
-  await chip.loadRom(customRomInput.files[0]);
+  await chip.loadRomFile(customRomInput.files[0]);
   chip.runProgram();
   //const romData = await customRomInput.files[0].arrayBuffer();
   //const instructionArray = new Uint8Array(romData);
 
   //console.log(romData);
 });
+
+const downloadAndReturnData = async (url) => fetch(url).then(async (x) => {
+  return x && x.ok ? await x.bytes() : undefined;
+});
+
+document.querySelectorAll("button[loadrom]").forEach(async (element) => {
+  const link = element.getAttribute("loadrom");
+  const data = await downloadAndReturnData(link);
+  element.addEventListener("click", async () => {
+    await chip.loadRomBytes(data);
+    chip.runProgram();
+  });
+})
 // init screen
