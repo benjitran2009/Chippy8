@@ -50,6 +50,9 @@ class Chip {
     this.romData = await customRomInput.files[0].arrayBuffer();
     this.instructionArray = new Uint16Array(this.romData);
   }
+  hexStringToNumber(hex) {
+    return Number(`$0x{hex}`)
+  }
   executeInstruction(byteOne, byteTwo) {
     const b1String = ("00" + byteOne.toString(16)).substr(-2);
     const b2String = ("00" + byteTwo.toString(16)).substr(-2);
@@ -57,18 +60,21 @@ class Chip {
     const nibble2 = b1String[1];
     const nibble3 = b2String[0];
     const nibble4 = b2String[1];
-    const mem = nibble1 + nibble2 + nibble3;
+    const nnn = nibble2 + nibble3 + nibble4;
     console.log(`byteOne: ${b1String} | byteTwo: ${b2String}
     nibble1: ${nibble1}
     nibble2: ${nibble2}
     nibble3: ${nibble3}
     nibble4: ${nibble4}
-    mem: ${mem} `);
+    mem: ${nnn} `);
 
     switch (nibble1) {
       case "0":
         break;
       case "1":
+        // JUMP instruction - this should jump to NNN
+        console.log("JUMP");
+        this.programCounter = this.hexStringToNumber(nnn);
         break;
       case "6":
         break;
