@@ -10,8 +10,9 @@
 > 🟥 - Broken
 > 🟩 - Working
 > 🟨 - Semi Working
+
 | Instruction | Status | Note |
-|--|--|--|
+| -- | -- | -- |
 | 00EO | 🟩 | none |
 | 1NNN | 🟩 | none |
 | 6XNN | 🟩 | none |
