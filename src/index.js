@@ -116,7 +116,7 @@ class Chip {
     const nnn = nibble2 + nibble3 + nibble4;
     byteOne = b1String;
     byteTwo = b2String;
-    console.log(`byteOne: ${b1String} | byteTwo: ${b2String}
+    console.log(`programCounter: ${this.programCounter} | byteOne: ${b1String} | byteTwo: ${b2String}
     nibble1: ${nibble1}
     nibble2: ${nibble2}
     nibble3: ${nibble3}
@@ -340,13 +340,13 @@ class Chip {
   runProgram() {
     if (!this.romData || !this.instructionArray)
       throw new Error("No rom loaded!");
-    this.programCounter = 0;
+    this.programCounter = 0x200;
     const programLoop = setInterval(() => {
       //if (this.programCounter < this.instructionArray.length) {
         //console.log(this.instructionArray[this.programCounter] + this.instructionArray[this.programCounter + 1])
         this.executeInstruction(
-          this.instructionArray[this.programCounter],
-          this.instructionArray[this.programCounter + 1],
+          memory[this.programCounter],
+          memory[this.programCounter + 1],
         ); // a|b
         this.programCounter += 2;
       //} else {
