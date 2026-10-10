@@ -1,13 +1,17 @@
 let memory = new Uint16Array(4096);
 let register = new Uint8Array(16).fill(false);
-let stack = new Uint8Array(16).fill(false);
+let stack = [];//new Array(16).fill(false);
 let indexRegister = 0;
 let currentKey = "";
 let delayTimer = 0;
 let soundTimer = 0;
+let keyHeld = false;
 document.addEventListener("keypress", (e) => {
   currentKey = e.key.toLowerCase();
 });
+document.addEventListener("keyup", () => keyHeld = false);
+document.addEventListener("keydown", () => keyHeld = true);
+
 
 const font = {
   0: [0xf0, 0x90, 0x90, 0x90, 0xf0], // 0
@@ -125,27 +129,38 @@ class Chip {
 
     switch (nibble1) {
       case "0":
+        //alert(nnn);
         if (nnn == "0e0") {
           // this is just clear screen.
+          //alert("CLEAR")
           console.log("CLEAR");
-          const x = new Array(64);
-          const y = new Array(32);
-          y.forEach((_, indxY) => {
-            x.forEach((_, indxX) => {
-              chippyScreen.off(indxX, indxY);
-            });
-          });
-        } else if (nibble2 == "0") {
+          for (let y = 0; y < 32; y++) {
+            for (let x = 0; x < 64; x++) {
+              chippyScreen.off(x,y);
+            }
+            
+          }
+          //const x = new Array(64);
+          //const y = new Array(32);
+          //y.forEach((_, indxY) => {
+          //  x.forEach((_, indxX) => {
+          //    chippyScreen.off(indxX, indxY);
+          //  });
+          //});
+        } else if (nnn == "0ee") {
+          //alert()
+          alert(JSON.stringify(stack))
           this.programCounter = stack.pop();
         }
         break;
       case "1":
         // JUMP instruction - this should jump to NNN
         console.log("JUMP");
-        this.programCounter = this.hexStringToNumber(nnn);
+        this.programCounter = this.hexStringToNumber(nnn)-2;
         break;
       case "2":
         console.log("SUBROUTINE");
+        //alert(JSON.stringify(this.programCounter));
         stack.push(this.programCounter);
         this.programCounter = this.hexStringToNumber(nnn);
         break;
@@ -327,6 +342,36 @@ class Chip {
             break;
           case "18":
             soundTimer = register[this.hexStringToNumber(nibble2)];
+            break;
+          case "1e":
+            indexRegister+=register[this.hexStringToNumber(nibble2)];
+            register[0xF] = indexRegister > 1000 ? 1 : register[0xf]
+          break;
+          case "0a":
+            if (!keyHeld) {
+              this.programCounter-=2;
+            } else {
+              register[this.hexStringToNumber(nibble2)] = currentKey.charCodeAt(0);
+            }
+            break;
+          case "29":
+            indexRegister = 0 + (register[this.hexStringToNumber(nibble2)] * 5);
+            break;
+          case "33":
+              let arr = (register[this.hexStringToNumber(nibble2)]).toString().padStart(3,0).split("");
+              arr.forEach((item, indx) => {
+                //alert(`Wrote ${item} to ${indexRegister + indx}`)
+                register[indx] = item;
+              })
+            break;
+          case "55":
+            for (let i = 0; i <= this.hexStringToNumber(nibble2); i++) {
+              let variableRegisterToStore = register[i];
+              register[indexRegister+i] = variableRegisterToStore;
+              //indexRegister++;
+            }
+            break;
+          case "65":
             break;
         }
         break;
