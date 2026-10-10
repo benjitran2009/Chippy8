@@ -1,6 +1,6 @@
 let memory = new Uint16Array(4096);
-let register = {};
-let stack = [];
+let register = new Uint8Array(16).fill(false);
+let stack = new Uint8Array(16).fill(false);
 let indexRegister = 0;
 let currentKey = "";
 let delayTimer = 0;
@@ -91,6 +91,7 @@ class Chip {
     this.romData = await rom.arrayBuffer(); //await customRomInput.files[0].arrayBuffer();
     this.instructionArray = new Uint8Array(this.romData);
     this.instructionArray.forEach((val, indx) => {
+      console.log(`WRITE ${val} TO ${indx+0x200}`);
       memory[indx + 0x200] = val;
     });
   }
@@ -341,17 +342,18 @@ class Chip {
       throw new Error("No rom loaded!");
     this.programCounter = 0;
     const programLoop = setInterval(() => {
-      if (this.programCounter < this.instructionArray.length) {
+      //if (this.programCounter < this.instructionArray.length) {
+        //console.log(this.instructionArray[this.programCounter] + this.instructionArray[this.programCounter + 1])
         this.executeInstruction(
           this.instructionArray[this.programCounter],
           this.instructionArray[this.programCounter + 1],
         ); // a|b
         this.programCounter += 2;
-      } else {
-        clearInterval(programLoop);
-        alert("Program finished");
-        return;
-      }
+      //} else {
+      //  clearInterval(programLoop);
+      //  alert("Program finished");
+      //  return;
+      //}
     }, 1000 / 700);
     const soundLoop = setInterval(() => {
       soundTimer = soundTimer - 1 <= -1 ? 0 : soundTimer - 1;
