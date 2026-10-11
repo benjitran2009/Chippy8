@@ -2,15 +2,68 @@ let memory = new Uint16Array(4096);
 let register = new Uint8Array(16).fill(false);
 let stack = []; //new Array(16).fill(false);
 let indexRegister = 0;
-let currentKey = "";
+let currentKey = 0;
 let delayTimer = 0;
 let soundTimer = 0;
-let keyHeld = false;
+let keyDown = false;
+//TODO: fix keyboard allow mult press
 document.addEventListener("keypress", (e) => {
-  currentKey = e.key.toLowerCase();
+  switch (e.key.toLowerCase()) {
+    case "0":
+      currentKey = 0x0;
+      break;
+    case "1":
+      currentKey = 0x1;
+      break;
+    case "2":
+      currentKey = 0x2;
+      break;
+    case "3":
+      currentKey = 0x3;
+      break;
+    case "4":
+      currentKey = 0x4;
+      break;
+    case "5":
+      currentKey = 0x5;
+      break;
+    case "6":
+      currentKey = 0x6;
+      break;
+    case "7":
+      currentKey = 0x7;
+      break;
+    case "8":
+      currentKey = 0x8;
+      break;
+    case "9":
+      currentKey = 0x9;
+      break;
+    case "a":
+      currentKey = 0xa;
+      break;
+    case "b":
+      currentKey = 0xb;
+      break;
+    case "c":
+      currentKey = 0xc;
+      break;
+    case "d":
+      currentKey = 0xd;
+      break;
+    case "e":
+      currentKey = 0xe;
+      break;
+    case "f":
+      currentKey = 0xf;
+      break;
+    default:
+      break;
+  }
+  //currentKey = e.key.toLowerCase();
 });
-document.addEventListener("keyup", () => (keyHeld = false));
-document.addEventListener("keydown", () => (keyHeld = true));
+document.addEventListener("keyup", () => (keyDown = false));
+document.addEventListener("keydown", () => (keyDown = true));
 
 const font = {
   0: [0xf0, 0x90, 0x90, 0x90, 0xf0], // 0
@@ -44,9 +97,9 @@ class Screen {
     this.canvas.height = 320;
     this.context.fillRect(0, 0, 640, 320);
     this.data = [];
-    for (let indx = 0; indx < 32; indx++) {
+    for (let indx = 0; indx <= 32; indx++) {
       this.data[indx] = [];
-      for (let indx2 = 0; indx2 < 64; indx2++) {
+      for (let indx2 = 0; indx2 <= 64; indx2++) {
         this.data[indx][indx2] = false;
       }
     }
@@ -56,12 +109,20 @@ class Screen {
   on(x, y) {
     this.context.fillStyle = "white";
     this.context.fillRect(x * 10, y * 10, 10, 10);
-    this.data[y][x] = true;
+    try {
+      this.data[y][x] = true;
+    } catch (er) {
+      alert(`${er} | ${x}, ${y}`);
+    }
   }
   off(x, y) {
     this.context.fillStyle = "black";
     this.context.fillRect(x * 10, y * 10, 10, 10);
-    this.data[y][x] = false;
+    try {
+      this.data[y][x] = false;
+    } catch (er) {
+      alert(`${er} | ${x}, ${y}`);
+    }
   }
   get(x, y) {
     //console.log(x,y);
@@ -210,21 +271,28 @@ class Chip {
           case "0":
             register[this.hexStringToNumber(nibble2)] =
               register[this.hexStringToNumber(nibble3)];
+            //register[0xf] = 0;
             break;
           case "1":
             register[this.hexStringToNumber(nibble2)] =
               register[this.hexStringToNumber(nibble2)] |
               register[this.hexStringToNumber(nibble3)];
+            register[0xf] = 0;
+
             break;
           case "2":
             register[this.hexStringToNumber(nibble2)] =
               register[this.hexStringToNumber(nibble2)] &
               register[this.hexStringToNumber(nibble3)];
+            register[0xf] = 0;
+
             break;
           case "3":
             register[this.hexStringToNumber(nibble2)] =
               register[this.hexStringToNumber(nibble2)] ^
               register[this.hexStringToNumber(nibble3)];
+            register[0xf] = 0;
+
             break;
           case "4":
             var result =
@@ -281,7 +349,8 @@ class Chip {
         indexRegister = this.hexStringToNumber(nnn);
         break;
       case "b":
-        this.programCounter = this.hexStringToNumber(nnn) + register[0x0];
+        //TODO
+        this.programCounter = this.hexStringToNumber(nnn) + register[this.hexStringToNumber(nibble2)]///register[this.hexStringToNumber(nibble2)];
         break;
       case "c":
         register[this.hexStringToNumber(nibble2)] =
@@ -328,12 +397,23 @@ class Chip {
       case "e":
         switch (byteTwo) {
           case "9e":
-            if (currentKey === register[this.hexStringToNumber(nibble2)]) {
+            console.debug("KeyEvent 9e");
+            if (
+              currentKey === register[this.hexStringToNumber(nibble2)] &&
+              keyDown
+            ) {
               this.programCounter += 2;
             }
             break;
           case "a1":
-            if (currentKey !== register[this.hexStringToNumber(nibble2)]) {
+            console.debug("KeyEvent a1");
+            if (
+              !(
+                currentKey === register[this.hexStringToNumber(nibble2)] &&
+                keyDown
+              )
+            ) {
+              //alert("skip");
               this.programCounter += 2;
             }
             break;
@@ -356,11 +436,11 @@ class Chip {
             register[0xf] = indexRegister > 1000 ? 1 : register[0xf];
             break;
           case "0a":
-            if (!keyHeld) {
+            console.debug("KeyEvent 0a");
+            if (!keyDown) {
               this.programCounter -= 2;
             } else {
-              register[this.hexStringToNumber(nibble2)] =
-                currentKey.charCodeAt(0);
+              register[this.hexStringToNumber(nibble2)] = currentKey;
             }
             break;
           case "29":
@@ -382,6 +462,7 @@ class Chip {
               memory[indexRegister + i] = variableRegisterToStore;
               //indexRegister++;
             }
+            indexRegister += this.hexStringToNumber(nibble2) + 1;
             break;
           case "65":
             //let valueStoredAtMemoryAddress = memory[this.hexStringToNumber(nibble2)];
@@ -391,6 +472,8 @@ class Chip {
               //memory[indexRegister+i] = variableRegisterToStore;
               //indexRegister++;
             }
+            indexRegister += this.hexStringToNumber(nibble2) + 1;
+
             break;
         }
         break;

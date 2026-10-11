@@ -23,6 +23,7 @@ Part 2 (next day)
 Implementing most of the new instructions were straightforward at first, but when I started running the test rom and looking at the code for it I saw that there were
 many dumb mistakes I accidentally made at the start or during the instructions which all added up but I believe I have fixed most of the errors.
 All instructions have beeen implemented to pass the corax test, but it is not fully accurate (as shown with flags)
+Keyboard working kinda right now but need to allow multi press and still need audio and acccurate instructions
 
 ## Goal
 
