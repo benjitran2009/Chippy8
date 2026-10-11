@@ -1,27 +1,17 @@
 # Chippy8
 
-{todo image}
+![Image of Chippy8 passing all the tests for the Corax+ Test](./images/coraxTest.png)
 
 ## A CHIP8 Emulator written in JavaScript
 
-{todo image}
-
 "never use UInt16Array again" -ben
 
-Downloads/hosts:
-[Single file (html, offline)](https://example.com)
-
-[Cloudflare (if my website domain ever expires)](https://example.com)
-
-[ben3coder.dev (if my website domain ever expires)](https://example.com)
-
-[Shortlink (Will always lead to some working copy (unless it expires))](https://example.com)
+Example/Demo:
+[chippy8.ben3coder.dev](https://chippy8.ben3coder.dev)
 
 - help from: [https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#6xnn-set](https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#6xnn-set)
 
 ## How the development went
-
-{todo image}
 
 The boilerplate for everything was relatively easy, but once I started doing the programming for the emulator I made some mistakes that
 catched on later when I was implementing the other instructions like not including a index register or a program(?) register and a screen
@@ -32,9 +22,7 @@ which I did like but overall would write another emulator after this one is fini
 Part 2 (next day)
 Implementing most of the new instructions were straightforward at first, but when I started running the test rom and looking at the code for it I saw that there were
 many dumb mistakes I accidentally made at the start or during the instructions which all added up but I believe I have fixed most of the errors.
-
-Currently there is only 6 instructions implemented out of 35(?) but the rest should be relatively easy.
-The goal is to ship with atleast 50% of instructions implemented or enough to run all the tests on CHIP8 Test Suite.
+All instructions have beeen implemented to pass the corax test, but it is not fully accurate (as shown with flags)
 
 ## Goal
 
@@ -48,20 +36,5 @@ The goal is to ship with atleast 50% of instructions implemented or enough to ru
 
 ## Statistics
 
-6/35 instructions implemented
-
+35/35 instructions implemented
 Non-cycle accurate (700/s (adjustable?))
-
-> Instructions implemented:
-> 🟥 - Broken
-> 🟩 - Working
-> 🟨 - Semi Working
-
-| Instruction | Status | Note |
-| -- | -- | -- |
-| 00EO | 🟩 | none |
-| 1NNN | 🟩 | none |
-| 6XNN | 🟩 | none |
-| 7XNN | 🟩 | none |
-| ANNN | 🟩 | none |
-| DXYN | 🟨 | May be buggy idk |

@@ -239,6 +239,7 @@ class Chip {
             register[this.hexStringToNumber(nibble2)] = result;
             break;
           case "5":
+            //(register[this.hexStringToNumber(nibble2) >= register[this.hexStringToNumber(nibble3)]]) ? register[0xf] = true : register[0xf] = false;
             register[this.hexStringToNumber(nibble2)] =
               register[this.hexStringToNumber(nibble2)] -
               register[this.hexStringToNumber(nibble3)];

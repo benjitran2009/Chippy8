@@ -1,28 +1,47 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chippy8</title>
     <script src="./index.js" async defer></script>
-    <link rel="stylesheet" href="./index.css">
-</head>
-<body>
+    <link rel="stylesheet" href="./index.css" />
+  </head>
+  <body>
     <h1>Chippy8</h1>
-    <p>A simple <s>but accurate</s> CHIP8 emulator written in JavaScript.</p>
-    <p>5 out of 35 instructions implemented as of 10/10/2026.</p>
+    <p>A simple but <i>accurateish</i> CHIP8 emulator written in JavaScript.</p>
+    <p>
+      100% instruction coverage (some may not be fully accurate or may be semi
+      broken)
+    </p>
+    <p>See README for what is implemented and what is not.</p>
     <p>"To be finished" -ben</p>
     <a href="https://github.com/benjitran2009/Chippy8">Github</a>
-    <hr>
+    <hr />
 
-    <canvas id="screen">
-
-    </canvas>
-    <hr>
-    Example ROMS: <button type="button" loadrom="../examples/2-ibm-logo.ch8">Load IBM Logo</button>
-    <hr>
+    <canvas id="screen"> </canvas>
+    <hr />
+    Example ROMS:
+    <button type="button" loadrom="../examples/2-ibm-logo.ch8">
+      2-ibm-logo.ch8
+    </button>
+    <button type="button" loadrom="../examples/3-corax+.ch8">
+      3-corax+.ch8
+    </button>
+    <button type="button" loadrom="../examples/4-flags.ch8">4-flags.ch8</button>
+    <button type="button" loadrom="../examples/5-quirks.ch8">
+      5-quirks.ch8
+    </button>
+    <button type="button" loadrom="../examples/6-keypad.ch8">
+      6-keypad.ch8
+    </button>
+    <button type="button" loadrom="../examples/7-beep.ch8">7-beep.ch8</button>
+    <button type="button" loadrom="../examples/8-scrolling.ch8">
+      8-scrolling.ch8
+    </button>
+    <hr />
     Load Custom ROM:
-    <input type="file" name="rom" id="rom" accept=".ch8">
+    <input type="file" name="rom" id="rom" accept=".ch8" />
     <button type="button" id="loadrom">Load Custom ROM</button>
-</body>
+  </body>
 </html>
