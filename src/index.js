@@ -279,40 +279,99 @@ class Chip {
             register[this.hexStringToNumber(nibble2)] =
               register[this.hexStringToNumber(nibble2)] |
               register[this.hexStringToNumber(nibble3)];
-            register[0xf] = 0;
+            //register[0xf] = 0;
 
             break;
           case "2":
             register[this.hexStringToNumber(nibble2)] =
               register[this.hexStringToNumber(nibble2)] &
               register[this.hexStringToNumber(nibble3)];
-            register[0xf] = 0;
+            //register[0xf] = 0;
 
             break;
           case "3":
             register[this.hexStringToNumber(nibble2)] =
               register[this.hexStringToNumber(nibble2)] ^
               register[this.hexStringToNumber(nibble3)];
-            register[0xf] = 0;
+            //register[0xf] = 0;
 
             break;
           case "4":
+            //alert(`OPCODE: ${byteOne+byteTwo} | ${register[this.hexStringToNumber(nibble2)]} + ${register[this.hexStringToNumber(nibble3)]} | FLAG: ${register[0xf]}`)
             var result =
               register[this.hexStringToNumber(nibble2)] +
               register[this.hexStringToNumber(nibble3)];
-            if (result > 255) {
+            register[this.hexStringToNumber(nibble2)] = result % 256;
+            if (result > 0xff) {
+              //register[this.hexStringToNumber(nibble2)] = result;
               register[0xf] = 1;
-              result = result % 256;
+              //result = result % 256;
+              //return;
+            } else {
+              //register[this.hexStringToNumber(nibble2)] = result;
+              register[0xf] = 0;
+            }
+            //register[this.hexStringToNumber(nibble2)] = result;
+            break;
+          case "5":
+
+            let minuend = register[this.hexStringToNumber(nibble2)];
+            let subtrahend = register[this.hexStringToNumber(nibble3)];
+            register[this.hexStringToNumber(nibble2)] = minuend - subtrahend;
+            if (minuend >= subtrahend) {
+              register[0xf] = 1;
             } else {
               register[0xf] = 0;
             }
-            register[this.hexStringToNumber(nibble2)] = result;
-            break;
-          case "5":
+            //register[this.hexStringToNumber(nibble2)] = register[this.hexStringToNumber(nibble2)] - register[this.hexStringToNumber(nibble3)];
+            
+
             //(register[this.hexStringToNumber(nibble2) >= register[this.hexStringToNumber(nibble3)]]) ? register[0xf] = true : register[0xf] = false;
-            register[this.hexStringToNumber(nibble2)] =
-              register[this.hexStringToNumber(nibble2)] -
-              register[this.hexStringToNumber(nibble3)];
+            //alert(`OPCODE: ${byteOne+byteTwo} | (0x${nibble2} = ${register[this.hexStringToNumber(nibble2)]}) - (0x${nibble3} ${register[this.hexStringToNumber(nibble3)]}) | FLAG: ${register[0xf]}`)
+            //
+            //alert(`Instrction`)
+            //var result =
+            //  register[this.hexStringToNumber(nibble2)] -
+            //  register[this.hexStringToNumber(nibble3)];
+
+            //register[this.hexStringToNumber(nibble2)] = result;
+
+            //register[0xf] = 1;
+
+            //var result =
+            //  register[this.hexStringToNumber(nibble2)] -
+            //  register[this.hexStringToNumber(nibble3)];
+
+            //register[this.hexStringToNumber(nibble2)] = result;
+
+            //if (result > register[this.hexStringToNumber(nibble3)]) {
+            //  register[0xf] = 0;
+            //              register[this.hexStringToNumber(nibble2)] = 0;
+
+            //}
+
+            //if (
+            //  register[
+            //    this.hexStringToNumber(nibble2) >=
+            //      register[this.hexStringToNumber(nibble3)]
+            //  ]
+            //) {
+            //register[this.hexStringToNumber(nibble2)] = result;
+            //register[0xf] = 1;
+            //} else if (
+            //  register[this.hexStringToNumber(nibble3)] >=
+            //  register[this.hexStringToNumber(nibble2)]
+            //) {
+            //register[this.hexStringToNumber(nibble2)] = result;
+            // register[0xf] = 0;
+            //}
+
+            //var result =
+            //  register[this.hexStringToNumber(nibble2)] -
+            //  register[this.hexStringToNumber(nibble3)];
+
+            //register[this.hexStringToNumber(nibble2)] = result;
+            //alert(`RESULT: x = ${register[this.hexStringToNumber(nibble2)]}} flag = ${register[0xf]}`)
             break;
           case "6":
             // this one might be wrong
@@ -324,9 +383,17 @@ class Chip {
             register[0xf] = shiftedBit ? 1 : 0;
             break;
           case "7":
-            register[this.hexStringToNumber(nibble2)] =
-              register[this.hexStringToNumber(nibble3)] -
-              register[this.hexStringToNumber(nibble2)];
+            let minuend1 = register[this.hexStringToNumber(nibble3)];
+            let subtrahend1 = register[this.hexStringToNumber(nibble2)];
+            register[this.hexStringToNumber(nibble2)] = minuend1 - subtrahend1;
+            if (minuend1 >= subtrahend1) {
+              register[0xf] = 1;
+            } else {
+              register[0xf] = 0;
+            }
+            //register[this.hexStringToNumber(nibble2)] =
+            //  register[this.hexStringToNumber(nibble3)] -
+            //  register[this.hexStringToNumber(nibble2)];
             break;
           case "e":
             //alert(byteOne+byteTwo)
@@ -335,7 +402,7 @@ class Chip {
             var shiftedBit = register[this.hexStringToNumber(nibble2)] & 1;
             register[this.hexStringToNumber(nibble2)] =
               (register[this.hexStringToNumber(nibble2)] << 1) % 256;
-            register[0xf] = shiftedBit ? 1 : 0;
+            register[0xf] = shiftedBit;//? 1 : 0;
             break;
         }
         break;

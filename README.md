@@ -26,7 +26,7 @@ All instructions have beeen implemented to pass the corax test, but it is not fu
 Keyboard working kinda right now but need to allow multi press and still need audio and acccurate instructions
 
 Part 3 (final day before ship crunch time)
-
+implementing the flags instructions were quite weird kinda took a bit but not hard just weird on how math works lol
 
 ## Goal
 
