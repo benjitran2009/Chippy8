@@ -2,7 +2,10 @@ let memory = new Uint16Array(4096);
 let register = new Uint8Array(16).fill(false);
 let stack = []; //new Array(16).fill(false);
 let indexRegister = 0;
-let lastKeyPressed = undefined;// TODO: FIX THISSSIJAODWIAH
+let lastKeyPressed = undefined; // TODO: FIX THISSSIJAODWIAH
+let lastKeyDownAndUp = false;
+let lastKeyDownAndUpKey = undefined;
+let waitingForKeyPress = false;
 let currentKeys = {
   0x0: false,
   0x1: false,
@@ -14,62 +17,61 @@ let currentKeys = {
   0x7: false,
   0x8: false,
   0x9: false,
-  0xA: false,
-  0xB: false,
-  0xC: false,
-  0xD: false,
-  0xE: false,
-  0xF: false,
-  
-}
+  0xa: false,
+  0xb: false,
+  0xc: false,
+  0xd: false,
+  0xe: false,
+  0xf: false,
+};
 
 function keyToChippyKey(key) {
-  switch(key.toLowerCase()) {
-  case "0":
-      return(0x0);
+  switch (key.toLowerCase()) {
+    case "0":
+      return 0x0;
     case "1":
-      return(0x1);
+      return 0x1;
     case "2":
-      return(0x2);
+      return 0x2;
     case "3":
-      return(0x3);
-      
+      return 0x3;
+
     case "4":
-      return(0x4);
-      
+      return 0x4;
+
     case "5":
-      return(0x5);
-      
+      return 0x5;
+
     case "6":
-      return(0x6);
-      
+      return 0x6;
+
     case "7":
-      return(0x7);
-      
+      return 0x7;
+
     case "8":
-      return(0x8);
-      
+      return 0x8;
+
     case "9":
-      return(0x9);
-      
+      return 0x9;
+
     case "a":
-      return(0xa);
-      
+      return 0xa;
+
     case "b":
-      return(0xb);
-      
+      return 0xb;
+
     case "c":
-      return(0xc);
-      
+      return 0xc;
+
     case "d":
-      return(0xd);
-      
+      return 0xd;
+
     case "e":
-      return(0xe);
-      
+      return 0xe;
+
     case "f":
-      return(0xf);
-      
+      return 0xf;
+
     default:
       return undefined;
   }
@@ -107,6 +109,10 @@ function keyOn(key) {
 }
 function keyOff(key) {
   currentKeys[key] = false;
+  if (waitingForKeyPress) {
+    lastKeyDownAndUp = true;
+    lastKeyDownAndUpKey = key;
+  }
 }
 
 let delayTimer = 0;
@@ -316,6 +322,7 @@ class Chip {
    * @param {File} rom - file to load
    */
   async loadRomFile(rom) {
+    memory = new Uint16Array(4096);
     this.romData = await rom.arrayBuffer(); //await customRomInput.files[0].arrayBuffer();
     this.instructionArray = new Uint8Array(this.romData);
     this.instructionArray.forEach((val, indx) => {
@@ -324,6 +331,7 @@ class Chip {
     });
   }
   async loadRomBytes(bytes) {
+    memory = new Uint16Array(4096);
     this.romData = bytes;
     this.instructionArray = bytes;
     this.instructionArray.forEach((val, indx) => {
@@ -630,17 +638,13 @@ class Chip {
         switch (byteTwo) {
           case "9e":
             //console.debug("KeyEvent 9e | "+JSON.stringify(currentKeys));
-            if (
-              currentKeys[register[this.hexStringToNumber(nibble2)]]
-            ) {
+            if (currentKeys[register[this.hexStringToNumber(nibble2)]]) {
               this.programCounter += 2;
             }
             break;
           case "a1":
             //console.debug("KeyEvent a1");
-            if (
-                !currentKeys[register[this.hexStringToNumber(nibble2)]]
-            ) {
+            if (!currentKeys[register[this.hexStringToNumber(nibble2)]]) {
               //alert("skip");
               this.programCounter += 2;
             }
@@ -664,15 +668,25 @@ class Chip {
             register[0xf] = indexRegister > 1000 ? 1 : register[0xf];
             break;
           case "0a":
-            console.debug("KeyEvent 0a | "+anyKeyDownAndReleased);
-            register[this.hexStringToNumber(nibble2)] = await waitForKeyPress();
-            //if (!anyKeyDownAndReleased) {
-            //  
-            //  this.programCounter -= 2;
-            //} else {
-            //  //await currentKeys[lastKeyPressed] === false;
-            //  register[this.hexStringToNumber(nibble2)] = lastKeyPressed;
-            //}
+            console.debug(
+              "KeyEvent 0a | " +
+                [
+                  waitingForKeyPress,
+                  lastKeyDownAndUp,
+                  lastKeyDownAndUpKey,
+                ].join(" "),
+            );
+            //register[this.hexStringToNumber(nibble2)] = await waitForKeyPress();
+            waitingForKeyPress = true;
+            if (!lastKeyDownAndUp) {
+              this.programCounter -= 2;
+            } else {
+              //await currentKeys[lastKeyPressed] === false;
+              waitingForKeyPress = false;
+              lastKeyDownAndUp = false;
+              lastKeyDownAndUpKey = undefined;
+              register[this.hexStringToNumber(nibble2)] = lastKeyDownAndUpKey;
+            }
             break;
           case "29":
             indexRegister = 0 + register[this.hexStringToNumber(nibble2)] * 5;
@@ -719,14 +733,44 @@ class Chip {
     if (!this.romData || !this.instructionArray)
       throw new Error("No rom loaded!");
     this.programCounter = 0x200;
+    // reset everything
+    //memory = new Uint16Array(4096);
+    for (let y = 0; y < 32; y++) {
+      for (let x = 0; x < 64; x++) {
+        chippyScreen.off(x, y);
+      }
+    }
+    this.loadFont(font);
+    register = new Uint8Array(16).fill(false);
+    stack = []; //new Array(16).fill(false);
+    indexRegister = 0;
+    lastKeyPressed = undefined; // TODO: FIX THISSSIJAODWIAH
+    lastKeyDownAndUp = false;
+    lastKeyDownAndUpKey = undefined;
+    waitingForKeyPress = false;
+    currentKeys = {
+      0x0: false,
+      0x1: false,
+      0x2: false,
+      0x3: false,
+      0x4: false,
+      0x5: false,
+      0x6: false,
+      0x7: false,
+      0x8: false,
+      0x9: false,
+      0xa: false,
+      0xb: false,
+      0xc: false,
+      0xd: false,
+      0xe: false,
+      0xf: false,
+    };
     if (!programLoop) {
       programLoop = setInterval(() => {
         //if (this.programCounter < this.instructionArray.length) {
         //console.log(this.instructionArray[this.programCounter] + this.instructionArray[this.programCounter + 1])
-        anyKeyDownAndReleased = false;
-        if (!currentKeys[lastKeyPressed]) {
-          anyKeyDownAndReleased = true;
-        }/*
+        /*
         for (var [key, enabled] of Object.entries(currentKeys)) {
           if (enabled) {
             anyKeyDownAndReleased = true;
