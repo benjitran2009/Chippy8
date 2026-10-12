@@ -24,6 +24,12 @@ let currentKeys = {
   0xe: false,
   0xf: false,
 };
+/**@type {AudioContext} */
+let audioContext;
+/**@type {GainNode} */
+let audioGainNode;
+/**@type {OscillatorNode} */
+let audioOscillator;
 
 function keyToChippyKey(key) {
   switch (key.toLowerCase()) {
@@ -790,8 +796,24 @@ class Chip {
       }, 1);
     }
     if (!soundLoop) {
+      audioContext = new AudioContext();
+      audioGainNode = audioContext.createGain();
+      audioGainNode.connect(audioContext.destination);
+      audioOscillator = audioContext.createOscillator();
+      audioOscillator.connect(audioGainNode);
+      audioOscillator.type = "square";
+      audioOscillator.frequency.value = 35;
+      audioOscillator.start();
+      audioGainNode.gain.value = 0;
       soundLoop = setInterval(() => {
         soundTimer = soundTimer - 1 <= -1 ? 0 : soundTimer - 1;
+        if (soundTimer !== 0) {
+          audioGainNode.gain.value = 0.2;
+          //audioOscillator.start();
+        } else {
+          audioGainNode.gain.value = 0;
+          //audioOscillator.stop();
+        }
       }, 1000 / 60);
     }
     if (!delayLoop) {
