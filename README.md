@@ -11,7 +11,7 @@ All CHIP-8 Specifications as accurate as possible.
 All instructions implemented mostly accurateish.
 
 Example/Demo:
-[chippy8.ben3coder.dev](https://chippy8.ben3coder.dev)
+[chippy8.ben3coder.dev](https://chippy8.ben3coder.dev/src)
 
 - help from: [https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#6xnn-set](https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#6xnn-set)
 
