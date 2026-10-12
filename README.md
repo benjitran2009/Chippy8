@@ -25,6 +25,9 @@ many dumb mistakes I accidentally made at the start or during the instructions w
 All instructions have beeen implemented to pass the corax test, but it is not fully accurate (as shown with flags)
 Keyboard working kinda right now but need to allow multi press and still need audio and acccurate instructions
 
+Part 3 (final day before ship crunch time)
+
+
 ## Goal
 
 - Good looking ui (for the example & iframe)

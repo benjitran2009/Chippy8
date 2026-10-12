@@ -6,6 +6,8 @@ let currentKey = 0;
 let delayTimer = 0;
 let soundTimer = 0;
 let keyDown = false;
+let programLoop, soundLoop, delayLoop;
+
 //TODO: fix keyboard allow mult press
 document.addEventListener("keypress", (e) => {
   switch (e.key.toLowerCase()) {
@@ -350,7 +352,9 @@ class Chip {
         break;
       case "b":
         //TODO
-        this.programCounter = this.hexStringToNumber(nnn) + register[this.hexStringToNumber(nibble2)]///register[this.hexStringToNumber(nibble2)];
+        this.programCounter =
+          this.hexStringToNumber(nnn) +
+          register[this.hexStringToNumber(nibble2)]; ///register[this.hexStringToNumber(nibble2)];
         break;
       case "c":
         register[this.hexStringToNumber(nibble2)] =
@@ -488,26 +492,33 @@ class Chip {
     if (!this.romData || !this.instructionArray)
       throw new Error("No rom loaded!");
     this.programCounter = 0x200;
-    const programLoop = setInterval(() => {
-      //if (this.programCounter < this.instructionArray.length) {
-      //console.log(this.instructionArray[this.programCounter] + this.instructionArray[this.programCounter + 1])
-      this.executeInstruction(
-        memory[this.programCounter],
-        memory[this.programCounter + 1],
-      ); // a|b
-      this.programCounter += 2;
-      //} else {
-      //  clearInterval(programLoop);
-      //  alert("Program finished");
-      //  return;
-      //}
-    }, 1000 / 700);
-    const soundLoop = setInterval(() => {
-      soundTimer = soundTimer - 1 <= -1 ? 0 : soundTimer - 1;
-    }, 1000 / 60);
-    const delayLoop = setInterval(() => {
-      delayTimer = delayTimer - 1 <= -1 ? 0 : soundTimer - 1;
-    }, 1000 / 60);
+    if (!programLoop) {
+      programLoop = setInterval(() => {
+        //if (this.programCounter < this.instructionArray.length) {
+        //console.log(this.instructionArray[this.programCounter] + this.instructionArray[this.programCounter + 1])
+        this.executeInstruction(
+          memory[this.programCounter],
+          memory[this.programCounter + 1],
+        ); // a|b
+        this.programCounter += 2;
+        //} else {
+        //  clearInterval(programLoop);
+        //  alert("Program finished");
+        //  return;
+        //}
+      }, 1000 / 700);
+    }
+    if (!soundLoop) {
+      soundLoop = setInterval(() => {
+        soundTimer = soundTimer - 1 <= -1 ? 0 : soundTimer - 1;
+      }, 1000 / 60);
+    }
+    if (!delayLoop) {
+      delayLoop = setInterval(() => {
+        delayTimer = delayTimer - 1 <= -1 ? 0 : soundTimer - 1;
+      }, 1000 / 60);
+    }
+
     /*
     while ((this.programCounter += 2 < this.instructionArray.length)) {
       this.executeInstruction(
