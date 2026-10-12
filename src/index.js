@@ -2,67 +2,69 @@ let memory = new Uint16Array(4096);
 let register = new Uint8Array(16).fill(false);
 let stack = []; //new Array(16).fill(false);
 let indexRegister = 0;
-let currentKey = 0;
+let currentKey = 0;// TODO: FIX THISSSIJAODWIAH
 let delayTimer = 0;
 let soundTimer = 0;
 let keyDown = false;
 let programLoop, soundLoop, delayLoop;
 
+//
+
 //TODO: fix keyboard allow mult press
 document.addEventListener("keypress", (e) => {
   switch (e.key.toLowerCase()) {
     case "0":
-      currentKey = 0x0;
+      keyCheck(0x0);
       break;
     case "1":
-      currentKey = 0x1;
+      keyCheck(0x1);
       break;
     case "2":
-      currentKey = 0x2;
+      keyCheck(0x2);
       break;
     case "3":
-      currentKey = 0x3;
+      keyCheck(0x3);
       break;
     case "4":
-      currentKey = 0x4;
+      keyCheck(0x4);
       break;
     case "5":
-      currentKey = 0x5;
+      keyCheck(0x5);
       break;
     case "6":
-      currentKey = 0x6;
+      keyCheck(0x6);
       break;
     case "7":
-      currentKey = 0x7;
+      keyCheck(0x7);
       break;
     case "8":
-      currentKey = 0x8;
+      keyCheck(0x8);
       break;
     case "9":
-      currentKey = 0x9;
+      keyCheck(0x9);
       break;
     case "a":
-      currentKey = 0xa;
+      keyCheck(0xa);
       break;
     case "b":
-      currentKey = 0xb;
+      keyCheck(0xb);
       break;
     case "c":
-      currentKey = 0xc;
+      keyCheck(0xc);
       break;
     case "d":
-      currentKey = 0xd;
+      keyCheck(0xd);
       break;
     case "e":
-      currentKey = 0xe;
+      keyCheck(0xe);
       break;
     case "f":
-      currentKey = 0xf;
+      keyCheck(0xf);
       break;
     default:
       break;
   }
-  //currentKey = e.key.toLowerCase();
+  //keyCheck(e.key.toLowerCase();
 });
 document.addEventListener("keyup", () => (keyDown = false));
 document.addEventListener("keydown", () => (keyDown = true));
@@ -279,21 +281,21 @@ class Chip {
             register[this.hexStringToNumber(nibble2)] =
               register[this.hexStringToNumber(nibble2)] |
               register[this.hexStringToNumber(nibble3)];
-            //register[0xf] = 0;
+            register[0xf] = 0;
 
             break;
           case "2":
             register[this.hexStringToNumber(nibble2)] =
               register[this.hexStringToNumber(nibble2)] &
               register[this.hexStringToNumber(nibble3)];
-            //register[0xf] = 0;
+            register[0xf] = 0;
 
             break;
           case "3":
             register[this.hexStringToNumber(nibble2)] =
               register[this.hexStringToNumber(nibble2)] ^
               register[this.hexStringToNumber(nibble3)];
-            //register[0xf] = 0;
+            register[0xf] = 0;
 
             break;
           case "4":
@@ -314,7 +316,6 @@ class Chip {
             //register[this.hexStringToNumber(nibble2)] = result;
             break;
           case "5":
-
             let minuend = register[this.hexStringToNumber(nibble2)];
             let subtrahend = register[this.hexStringToNumber(nibble3)];
             register[this.hexStringToNumber(nibble2)] = minuend - subtrahend;
@@ -324,7 +325,6 @@ class Chip {
               register[0xf] = 0;
             }
             //register[this.hexStringToNumber(nibble2)] = register[this.hexStringToNumber(nibble2)] - register[this.hexStringToNumber(nibble3)];
-            
 
             //(register[this.hexStringToNumber(nibble2) >= register[this.hexStringToNumber(nibble3)]]) ? register[0xf] = true : register[0xf] = false;
             //alert(`OPCODE: ${byteOne+byteTwo} | (0x${nibble2} = ${register[this.hexStringToNumber(nibble2)]}) - (0x${nibble3} ${register[this.hexStringToNumber(nibble3)]}) | FLAG: ${register[0xf]}`)
@@ -380,7 +380,7 @@ class Chip {
             var shiftedBit = register[this.hexStringToNumber(nibble2)] & 1;
             register[this.hexStringToNumber(nibble2)] =
               (register[this.hexStringToNumber(nibble2)] >> 1) % 256;
-            register[0xf] = shiftedBit ? 1 : 0;
+            register[0xf] = shiftedBit;
             break;
           case "7":
             let minuend1 = register[this.hexStringToNumber(nibble3)];
@@ -397,12 +397,15 @@ class Chip {
             break;
           case "e":
             //alert(byteOne+byteTwo)
+            //alert([register[0x2], register[0x3], register[0xf]].join(" "));
+            //alert(`Shifting ${this.hexStringToNumber(nibble2).toString(2)} -> ${(this.hexStringToNumber(nibble2)<<1).toString(2)}} [LEFT] Shifted bit: ${(register[this.hexStringToNumber(nibble2) & 1]).toString(2)}`)
             register[this.hexStringToNumber(nibble2)] =
               register[this.hexStringToNumber(nibble3)]; //OPT
-            var shiftedBit = register[this.hexStringToNumber(nibble2)] & 1;
+            // note: bit count matters
+            var shiftedBit = register[this.hexStringToNumber(nibble2)] >> 7; //(((register[this.hexStringToNumber(nibble2)])<<1)>>1)
             register[this.hexStringToNumber(nibble2)] =
               (register[this.hexStringToNumber(nibble2)] << 1) % 256;
-            register[0xf] = shiftedBit;//? 1 : 0;
+            register[0xf] = shiftedBit; //? 1 : 0;
             break;
         }
         break;
@@ -419,9 +422,7 @@ class Chip {
         break;
       case "b":
         //TODO
-        this.programCounter =
-          this.hexStringToNumber(nnn) +
-          register[this.hexStringToNumber(nibble2)]; ///register[this.hexStringToNumber(nibble2)];
+        this.programCounter = this.hexStringToNumber(nnn) + register[0x0] - 2; //register[this.hexStringToNumber(nibble2)] - 2; ///register[this.hexStringToNumber(nibble2)];
         break;
       case "c":
         register[this.hexStringToNumber(nibble2)] =
@@ -573,7 +574,7 @@ class Chip {
         //  alert("Program finished");
         //  return;
         //}
-      }, 1000 / 700);
+      }, 1);
     }
     if (!soundLoop) {
       soundLoop = setInterval(() => {
