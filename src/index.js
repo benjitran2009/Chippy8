@@ -23,6 +23,84 @@ let currentKeys = {
   
 }
 
+function keyToChippyKey(key) {
+  switch(key.toLowerCase()) {
+  case "0":
+      return(0x0);
+    case "1":
+      return(0x1);
+    case "2":
+      return(0x2);
+    case "3":
+      return(0x3);
+      
+    case "4":
+      return(0x4);
+      
+    case "5":
+      return(0x5);
+      
+    case "6":
+      return(0x6);
+      
+    case "7":
+      return(0x7);
+      
+    case "8":
+      return(0x8);
+      
+    case "9":
+      return(0x9);
+      
+    case "a":
+      return(0xa);
+      
+    case "b":
+      return(0xb);
+      
+    case "c":
+      return(0xc);
+      
+    case "d":
+      return(0xd);
+      
+    case "e":
+      return(0xe);
+      
+    case "f":
+      return(0xf);
+      
+    default:
+      return undefined;
+  }
+}
+/*
+async function waitForKeyPress() {
+  return new Promise((resolve) => {
+    const cold = Object.freeze(Object.create(currentKeys));
+    let toClearDown = [];
+    let toClearUp = [];
+    for (let [key, pressed] of Object.entries(currentKeys)) {
+      if (!pressed) {
+        let toRemoveDown = document.addEventListener("keydown", (e) => {
+          if (keyToChippyKey(e.key) == key) {
+            let toRemoveUp = document.addEventListener("keyup", (e) => {
+              if (keyToChippyKey(e.key) == key) {
+                toClearDown.forEach((v) => document.removeEventListener("keydown", v));
+                toClearUp.forEach((v) => document.removeEventListener("keyup", v));
+                resolve(key);
+              }
+              toClearUp.push(toRemoveUp)
+            })
+          }
+        });
+        toClearDown.push(toRemoveDown);
+      }
+    }
+  })
+}
+*/
+
 function keyOn(key) {
   lastKeyPressed = key;
   currentKeys[key] = true;
@@ -256,7 +334,7 @@ class Chip {
   hexStringToNumber(hex) {
     return Number(`0x${hex}`);
   }
-  executeInstruction(byteOne, byteTwo) {
+  async executeInstruction(byteOne, byteTwo) {
     const b1String = byteOne.toString(16).padStart(2, "0").toLowerCase();
     const b2String = byteTwo.toString(16).padStart(2, "0").toLowerCase();
     const nibble1 = b1String[0];
@@ -587,12 +665,14 @@ class Chip {
             break;
           case "0a":
             console.debug("KeyEvent 0a | "+anyKeyDownAndReleased);
-            if (!anyKeyDownAndReleased) {
-              this.programCounter -= 2;
-            } else {
-              //await currentKeys[lastKeyPressed] === false;
-              register[this.hexStringToNumber(nibble2)] = lastKeyPressed;
-            }
+            register[this.hexStringToNumber(nibble2)] = await waitForKeyPress();
+            //if (!anyKeyDownAndReleased) {
+            //  
+            //  this.programCounter -= 2;
+            //} else {
+            //  //await currentKeys[lastKeyPressed] === false;
+            //  register[this.hexStringToNumber(nibble2)] = lastKeyPressed;
+            //}
             break;
           case "29":
             indexRegister = 0 + register[this.hexStringToNumber(nibble2)] * 5;
