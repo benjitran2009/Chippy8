@@ -2,72 +2,154 @@ let memory = new Uint16Array(4096);
 let register = new Uint8Array(16).fill(false);
 let stack = []; //new Array(16).fill(false);
 let indexRegister = 0;
-let currentKey = 0;// TODO: FIX THISSSIJAODWIAH
+let lastKeyPressed = undefined;// TODO: FIX THISSSIJAODWIAH
+let currentKeys = {
+  0x0: false,
+  0x1: false,
+  0x2: false,
+  0x3: false,
+  0x4: false,
+  0x5: false,
+  0x6: false,
+  0x7: false,
+  0x8: false,
+  0x9: false,
+  0xA: false,
+  0xB: false,
+  0xC: false,
+  0xD: false,
+  0xE: false,
+  0xF: false,
+  
+}
+
+function keyOn(key) {
+  lastKeyPressed = key;
+  currentKeys[key] = true;
+}
+function keyOff(key) {
+  currentKeys[key] = false;
+}
+
 let delayTimer = 0;
 let soundTimer = 0;
-let keyDown = false;
+let anyKeyDownAndReleased = false;
 let programLoop, soundLoop, delayLoop;
 
 //
 
 //TODO: fix keyboard allow mult press
-document.addEventListener("keypress", (e) => {
+document.addEventListener("keydown", (e) => {
   switch (e.key.toLowerCase()) {
     case "0":
-      keyCheck(0x0);
+      keyOn(0x0);
       break;
     case "1":
-      keyCheck(0x1);
+      keyOn(0x1);
       break;
     case "2":
-      keyCheck(0x2);
+      keyOn(0x2);
       break;
     case "3":
-      keyCheck(0x3);
+      keyOn(0x3);
       break;
     case "4":
-      keyCheck(0x4);
+      keyOn(0x4);
       break;
     case "5":
-      keyCheck(0x5);
+      keyOn(0x5);
       break;
     case "6":
-      keyCheck(0x6);
+      keyOn(0x6);
       break;
     case "7":
-      keyCheck(0x7);
+      keyOn(0x7);
       break;
     case "8":
-      keyCheck(0x8);
+      keyOn(0x8);
       break;
     case "9":
-      keyCheck(0x9);
+      keyOn(0x9);
       break;
     case "a":
-      keyCheck(0xa);
+      keyOn(0xa);
       break;
     case "b":
-      keyCheck(0xb);
+      keyOn(0xb);
       break;
     case "c":
-      keyCheck(0xc);
+      keyOn(0xc);
       break;
     case "d":
-      keyCheck(0xd);
+      keyOn(0xd);
       break;
     case "e":
-      keyCheck(0xe);
+      keyOn(0xe);
       break;
     case "f":
-      keyCheck(0xf);
+      keyOn(0xf);
       break;
     default:
       break;
   }
   //keyCheck(e.key.toLowerCase();
 });
-document.addEventListener("keyup", () => (keyDown = false));
-document.addEventListener("keydown", () => (keyDown = true));
+
+document.addEventListener("keyup", (e) => {
+  switch (e.key.toLowerCase()) {
+    case "0":
+      keyOff(0x0);
+      break;
+    case "1":
+      keyOff(0x1);
+      break;
+    case "2":
+      keyOff(0x2);
+      break;
+    case "3":
+      keyOff(0x3);
+      break;
+    case "4":
+      keyOff(0x4);
+      break;
+    case "5":
+      keyOff(0x5);
+      break;
+    case "6":
+      keyOff(0x6);
+      break;
+    case "7":
+      keyOff(0x7);
+      break;
+    case "8":
+      keyOff(0x8);
+      break;
+    case "9":
+      keyOff(0x9);
+      break;
+    case "a":
+      keyOff(0xa);
+      break;
+    case "b":
+      keyOff(0xb);
+      break;
+    case "c":
+      keyOff(0xc);
+      break;
+    case "d":
+      keyOff(0xd);
+      break;
+    case "e":
+      keyOff(0xe);
+      break;
+    case "f":
+      keyOff(0xf);
+      break;
+    default:
+      break;
+  }
+  //keyCheck(e.key.toLowerCase();
+});
 
 const font = {
   0: [0xf0, 0x90, 0x90, 0x90, 0xf0], // 0
@@ -469,21 +551,17 @@ class Chip {
       case "e":
         switch (byteTwo) {
           case "9e":
-            console.debug("KeyEvent 9e");
+            //console.debug("KeyEvent 9e | "+JSON.stringify(currentKeys));
             if (
-              currentKey === register[this.hexStringToNumber(nibble2)] &&
-              keyDown
+              currentKeys[register[this.hexStringToNumber(nibble2)]]
             ) {
               this.programCounter += 2;
             }
             break;
           case "a1":
-            console.debug("KeyEvent a1");
+            //console.debug("KeyEvent a1");
             if (
-              !(
-                currentKey === register[this.hexStringToNumber(nibble2)] &&
-                keyDown
-              )
+                !currentKeys[register[this.hexStringToNumber(nibble2)]]
             ) {
               //alert("skip");
               this.programCounter += 2;
@@ -508,11 +586,12 @@ class Chip {
             register[0xf] = indexRegister > 1000 ? 1 : register[0xf];
             break;
           case "0a":
-            console.debug("KeyEvent 0a");
-            if (!keyDown) {
+            console.debug("KeyEvent 0a | "+anyKeyDownAndReleased);
+            if (!anyKeyDownAndReleased) {
               this.programCounter -= 2;
             } else {
-              register[this.hexStringToNumber(nibble2)] = currentKey;
+              //await currentKeys[lastKeyPressed] === false;
+              register[this.hexStringToNumber(nibble2)] = lastKeyPressed;
             }
             break;
           case "29":
@@ -564,6 +643,16 @@ class Chip {
       programLoop = setInterval(() => {
         //if (this.programCounter < this.instructionArray.length) {
         //console.log(this.instructionArray[this.programCounter] + this.instructionArray[this.programCounter + 1])
+        anyKeyDownAndReleased = false;
+        if (!currentKeys[lastKeyPressed]) {
+          anyKeyDownAndReleased = true;
+        }/*
+        for (var [key, enabled] of Object.entries(currentKeys)) {
+          if (enabled) {
+            anyKeyDownAndReleased = true;
+            break;
+          }
+        }*/
         this.executeInstruction(
           memory[this.programCounter],
           memory[this.programCounter + 1],
